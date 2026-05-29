@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font-sans,'ui-monospace,monospace');background:var(--color-background-tertiary);color:var(--color-text-primary);font-size:13px}
+:root{--red:#E24B4A;--amber:#BA7517;--green:#3B6D11;--blue:#185FA5;--purple:#534AB7;--teal:#0F6E56;--border:var(--color-border-tertiary);--card:var(--color-background-primary);--sec:var(--color-background-secondary)}
+.shell{display:grid;grid-template-rows:auto 1fr;height:100vh;min-height:600px}
+.topbar{background:var(--card);border-bottom:0.5px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:16px}
+.logo{font-weight:600;font-size:14px;letter-spacing:.04em;color:var(--color-text-primary);display:flex;align-items:center;gap:8px}
+.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 0 3px rgba(226,75,74,.2);animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 3px rgba(226,75,74,.18)}50%{box-shadow:0 0 0 6px rgba(226,75,74,.08)}}
+.badge{font-size:10px;padding:2px 7px;border-radius:3px;font-weight:500;letter-spacing:.06em}
+.badge-red{background:rgba(226,75,74,.12);color:var(--red)}
+.badge-amber{background:rgba(186,117,23,.12);color:var(--amber)}
+.badge-green{background:rgba(59,109,17,.12);color:var(--green)}
+.badge-blue{background:rgba(24,95,165,.12);color:var(--blue)}
+.badge-purple{background:rgba(83,74,183,.12);color:var(--purple)}
+.tabs{display:flex;gap:0;margin-left:auto}
+.tab{padding:6px 14px;font-size:12px;cursor:pointer;border-radius:4px;color:var(--color-text-secondary);transition:.15s;border:none;background:none;font-family:inherit}
+.tab.active{background:var(--color-background-info);color:var(--blue);font-weight:500}
+.tab:hover:not(.active){background:var(--sec)}
+.main{display:grid;grid-template-columns:220px 1fr;overflow:hidden}
+.sidebar{background:var(--card);border-right:0.5px solid var(--border);padding:12px 0;overflow-y:auto}
+.sidebar-section{padding:0 12px;margin-bottom:16px}
+.sidebar-label{font-size:10px;font-weight:600;letter-spacing:.1em;color:var(--color-text-tertiary);text-transform:uppercase;margin-bottom:8px;padding:0 4px}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:5px 4px;border-radius:4px}
+.stat-row:hover{background:var(--sec)}
+.stat-name{color:var(--color-text-secondary);font-size:12px}
+.stat-val{font-weight:600;font-size:13px;font-variant-numeric:tabular-nums}
+.sparkline{display:flex;align-items:flex-end;gap:1px;height:20px}
+.spark-bar{width:3px;border-radius:1px;background:var(--blue);opacity:.6;transition:.3s}
+.interface-item{padding:5px 4px;display:flex;align-items:center;gap:8px;border-radius:4px;cursor:pointer}
+.interface-item:hover{background:var(--sec)}
+.iface-dot{width:6px;height:6px;border-radius:50%}
+.iface-label{font-size:12px;color:var(--color-text-secondary)}
+.iface-speed{font-size:10px;color:var(--color-text-tertiary);margin-left:auto}
+.content{overflow:hidden;display:flex;flex-direction:column}
+.content-inner{flex:1;overflow:auto;padding:14px}
+.panel{display:none}
+.panel.active{display:block}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px}
+.card{background:var(--card);border:0.5px solid var(--border);border-radius:8px;padding:12px}
+.metric-card{text-align:center;padding:14px 12px}
+.metric-label{font-size:11px;color:var(--color-text-tertiary);letter-spacing:.04em;margin-bottom:4px}
+.metric-value{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.metric-delta{font-size:10px;margin-top:2px}
+.card-title{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-tertiary);margin-bottom:10px}
+.chart-bars{display:flex;align-items:flex-end;gap:3px;height:60px}
+.bar{flex:1;border-radius:2px 2px 0 0;transition:.5s;min-height:2px}
+.alert-feed{display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto}
+.alert-item{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:6px;border:0.5px solid var(--border);cursor:pointer;transition:.15s;animation:slideIn .3s ease-out}
+@keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.alert-item:hover{background:var(--sec);border-color:var(--color-border-secondary)}
+.alert-item.crit{border-left:2px solid var(--red)}
+.alert-item.high{border-left:2px solid var(--amber)}
+.alert-item.med{border-left:2px solid var(--blue)}
+.alert-item.low{border-left:2px solid var(--green)}
+.alert-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.alert-icon.crit{background:rgba(226,75,74,.1);color:var(--red)}
+.alert-icon.high{background:rgba(186,117,23,.1);color:var(--amber)}
+.alert-icon.med{background:rgba(24,95,165,.1);color:var(--blue)}
+.alert-icon.low{background:rgba(59,109,17,.1);color:var(--green)}
+.alert-body{flex:1;min-width:0}
+.alert-title{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.alert-meta{font-size:10px;color:var(--color-text-tertiary);margin-top:1px;display:flex;gap:8px}
+.alert-time{font-size:10px;color:var(--color-text-tertiary);flex-shrink:0;font-variant-numeric:tabular-nums}
+.traffic-chart{position:relative;height:90px;margin-top:4px}
+canvas{position:absolute;top:0;left:0;width:100%!important;height:100%!important}
+.rule-table{width:100%;border-collapse:collapse;font-size:12px}
+.rule-table th{text-align:left;padding:6px 8px;border-bottom:0.5px solid var(--border);font-size:10px;font-weight:600;letter-spacing:.06em;color:var(--color-text-tertiary);text-transform:uppercase}
+.rule-table td{padding:7px 8px;border-bottom:0.5px solid var(--border);vertical-align:middle}
+.rule-table tr:last-child td{border-bottom:none}
+.rule-table tr:hover td{background:var(--sec)}
+.toggle-switch{position:relative;width:28px;height:16px}
+.toggle-switch input{opacity:0;width:0;height:0;position:absolute}
+.slider-track{position:absolute;inset:0;border-radius:8px;background:var(--color-border-secondary);cursor:pointer;transition:.2s}
+.slider-track::after{content:'';position:absolute;width:12px;height:12px;left:2px;top:2px;border-radius:50%;background:white;transition:.2s}
+input:checked+.slider-track{background:var(--green)}
+input:checked+.slider-track::after{transform:translateX(12px)}
+.rule-code{font-family:var(--font-mono);font-size:10px;color:var(--color-text-secondary);background:var(--sec);padding:2px 5px;border-radius:3px}
+.geo-map{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px}
+.geo-item{background:var(--sec);border-radius:6px;padding:8px;display:flex;flex-direction:column;gap:3px;cursor:pointer;transition:.15s;border:0.5px solid transparent}
+.geo-item:hover{border-color:var(--border)}
+.geo-flag{font-size:18px}
+.geo-name{font-size:11px;font-weight:500}
+.geo-count{font-size:10px;color:var(--color-text-tertiary)}
+.geo-bar-wrap{height:3px;background:var(--border);border-radius:2px;margin-top:2px}
+.geo-bar{height:3px;border-radius:2px;background:var(--red);transition:width .8s ease}
+.response-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.response-card{background:var(--sec);border-radius:6px;padding:10px;border:0.5px solid var(--border);cursor:pointer;transition:.15s}
+.response-card:hover{border-color:var(--color-border-secondary);background:var(--card)}
+.response-card.active-resp{border-color:var(--blue);background:rgba(24,95,165,.05)}
+.response-title{font-size:12px;font-weight:500;margin-bottom:2px}
+.response-desc{font-size:10px;color:var(--color-text-tertiary)}
+.response-status{display:flex;align-items:center;gap:4px;margin-top:6px;font-size:10px}
+.status-dot{width:5px;height:5px;border-radius:50%}
+.timeline{position:relative;padding-left:20px}
+.tl-item{position:relative;padding-bottom:14px}
+.tl-item::before{content:'';position:absolute;left:-14px;top:6px;bottom:-8px;width:1px;background:var(--border)}
+.tl-item:last-child::before{display:none}
+.tl-dot{position:absolute;left:-18px;top:3px;width:9px;height:9px;border-radius:50%;border:1.5px solid var(--card)}
+.tl-text{font-size:11px;color:var(--color-text-secondary)}
+.tl-time{font-size:10px;color:var(--color-text-tertiary);margin-top:1px}
+.search-bar{width:100%;background:var(--sec);border:0.5px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;font-family:inherit;color:var(--color-text-primary);margin-bottom:10px;outline:none;transition:.15s}
+.search-bar:focus{border-color:var(--color-border-secondary)}
+.protocol-pills{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px}
+.pill{padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;cursor:pointer;border:0.5px solid var(--border);background:var(--sec);color:var(--color-text-secondary);transition:.15s;letter-spacing:.04em}
+.pill.active{background:var(--blue);color:white;border-color:var(--blue)}
+.threat-matrix{display:grid;grid-template-columns:repeat(8,1fr);gap:3px}
+.matrix-cell{aspect-ratio:1;border-radius:3px;cursor:pointer;transition:.2s;position:relative}
+.matrix-cell:hover{transform:scale(1.15);z-index:1}
+.matrix-label{font-size:9px;color:var(--color-text-tertiary);text-align:center;margin-top:2px}
+.heatrow{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.heatrow-label{font-size:10px;color:var(--color-text-secondary);width:70px;text-align:right;flex-shrink:0}
+.heatcells{display:flex;gap:3px}
+.hcell{width:16px;height:16px;border-radius:2px}
+.mini-donut{position:relative;width:70px;height:70px}
+.mini-donut svg{width:100%;height:100%}
+.donut-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.donut-num{font-size:14px;font-weight:600}
+.donut-sub{font-size:8px;color:var(--color-text-tertiary)}
+.flex-between{display:flex;justify-content:space-between;align-items:center}
+.flex-gap{display:flex;align-items:center;gap:8px}
+.packets-table{width:100%;border-collapse:collapse;font-size:11px;font-family:var(--font-mono)}
+.packets-table th{font-family:var(--font-sans);font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-tertiary);padding:5px 6px;border-bottom:0.5px solid var(--border);text-align:left}
+.packets-table td{padding:4px 6px;border-bottom:0.5px solid var(--border);white-space:nowrap}
+.packets-table tr.flagged td{background:rgba(226,75,74,.04)}
+.packets-table tr:hover td{background:var(--sec)}
+.proto-tag{font-family:var(--font-sans);display:inline-block;padding:1px 5px;border-radius:3px;font-size:9px;font-weight:600}
+.btn-sm{padding:4px 10px;border-radius:4px;font-size:11px;font-family:inherit;cursor:pointer;border:0.5px solid var(--border);background:var(--sec);color:var(--color-text-secondary);transition:.15s}
+.btn-sm:hover{background:var(--card);border-color:var(--color-border-secondary)}
+.btn-sm.danger{background:rgba(226,75,74,.1);border-color:rgba(226,75,74,.3);color:var(--red)}
+.btn-sm.danger:hover{background:rgba(226,75,74,.18)}
+.notify{position:fixed;top:50px;right:16px;background:var(--card);border:0.5px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:100;animation:slideIn .25s ease-out;display:none;max-width:260px}
+.notify.show{display:block}
+.notify-title{font-weight:600;font-size:13px;margin-bottom:2px}
+.notify-sub{color:var(--color-text-secondary);font-size:11px}
+.sim-control{display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:8px 10px;background:var(--sec);border-radius:6px;border:0.5px solid var(--border)}
+.sim-led{width:7px;height:7px;border-radius:50%;background:var(--green)}
+.sim-led.paused{background:var(--amber)}
+.attack-buttons{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.atk-btn{padding:5px 10px;border-radius:5px;font-size:11px;font-family:inherit;cursor:pointer;border:0.5px solid var(--border);background:var(--sec);color:var(--color-text-secondary);transition:.15s;display:flex;align-items:center;gap:4px}
+.atk-btn:hover{background:rgba(226,75,74,.1);border-color:rgba(226,75,74,.3);color:var(--red)}
+.atk-btn.active-atk{background:rgba(226,75,74,.15);border-color:rgba(226,75,74,.4);color:var(--red);animation:attackPulse 1s ease-in-out infinite}
+@keyframes attackPulse{0%,100%{opacity:1}50%{opacity:.75}}
+</style>
+</head>
+<body>
+<div class="shell">
+<div class="topbar">
+  <div class="logo"><div class="logo-dot"></div>SHIELD-NIDS</div>
+  <span class="badge badge-red">● MONITORING</span>
+  <span style="font-size:11px;color:var(--color-text-tertiary)" id="top-clock">00:00:00 UTC</span>
+  <span style="font-size:11px;color:var(--color-text-tertiary);margin-left:8px" id="pkt-rate">0 pkt/s</span>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('dashboard',this)">Dashboard</button>
+    <button class="tab" onclick="switchTab('alerts',this)">Alerts <span id="alert-badge" style="display:none;background:var(--red);color:white;border-radius:10px;padding:0 5px;font-size:9px;margin-left:3px">0</span></button>
+    <button class="tab" onclick="switchTab('rules',this)">Rules</button>
+    <button class="tab" onclick="switchTab('packets',this)">Packets</button>
+    <button class="tab" onclick="switchTab('response',this)">Response</button>
+  </div>
+</div>
+<div class="main">
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Sensor Status</div>
+      <div class="stat-row"><span class="stat-name">eth0</span><span class="stat-val" style="color:var(--green);font-size:11px">● Active</span></div>
+      <div class="stat-row"><span class="stat-name">eth1</span><span class="stat-val" style="color:var(--green);font-size:11px">● Active</span></div>
+      <div class="stat-row"><span class="stat-name">wlan0</span><span class="stat-val" style="color:var(--amber);font-size:11px">◐ Passive</span></div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Live Counters</div>
+      <div class="stat-row"><span class="stat-name">Packets</span><span class="stat-val" id="s-pkts">0</span></div>
+      <div class="stat-row"><span class="stat-name">Alerts</span><span class="stat-val" id="s-alerts" style="color:var(--red)">0</span></div>
+      <div class="stat-row"><span class="stat-name">Blocked IPs</span><span class="stat-val" id="s-blocked">0</span></div>
+      <div class="stat-row"><span class="stat-name">Rules Active</span><span class="stat-val" id="s-rules">12</span></div>
+      <div class="stat-row"><span class="stat-name">False Positives</span><span class="stat-val" id="s-fp">0</span></div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Top Threats</div>
+      <div id="sidebar-threats"></div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Traffic Sparkline</div>
+      <div class="sparkline" id="sparkline"></div>
+      <div style="font-size:9px;color:var(--color-text-tertiary);margin-top:3px">Last 20 samples</div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="content-inner">
+
+      <!-- DASHBOARD -->
+      <div class="panel active" id="panel-dashboard">
+        <div class="sim-control">
+          <div class="sim-led" id="sim-led"></div>
+          <span style="font-size:11px;font-weight:500" id="sim-status">Simulation running</span>
+          <button class="btn-sm" id="sim-toggle" onclick="toggleSim()">Pause</button>
+          <span style="font-size:10px;color:var(--color-text-tertiary);margin-left:4px">Simulate attacks:</span>
+          <div class="attack-buttons">
+            <button class="atk-btn" id="atk-portscan" onclick="triggerAttack('portscan')">⚡ Port Scan</button>
+            <button class="atk-btn" id="atk-sqli" onclick="triggerAttack('sqli')">💉 SQLi</button>
+            <button class="atk-btn" id="atk-dos" onclick="triggerAttack('dos')">🌊 DoS</button>
+            <button class="atk-btn" id="atk-brute" onclick="triggerAttack('brute')">🔑 Brute Force</button>
+            <button class="atk-btn" id="atk-xss" onclick="triggerAttack('xss')">📜 XSS</button>
+          </div>
+        </div>
+        <div class="grid4">
+          <div class="card metric-card"><div class="metric-label">CRITICAL</div><div class="metric-value" id="m-crit" style="color:var(--red)">0</div><div class="metric-delta" style="color:var(--color-text-tertiary)">alerts</div></div>
+          <div class="card metric-card"><div class="metric-label">HIGH</div><div class="metric-value" id="m-high" style="color:var(--amber)">0</div><div class="metric-delta" style="color:var(--color-text-tertiary)">alerts</div></div>
+          <div class="card metric-card"><div class="metric-label">MEDIUM</div><div class="metric-value" id="m-med" style="color:var(--blue)">0</div><div class="metric-delta" style="color:var(--color-text-tertiary)">alerts</div></div>
+          <div class="card metric-card"><div class="metric-label">LOW</div><div class="metric-value" id="m-low" style="color:var(--green)">0</div><div class="metric-delta" style="color:var(--color-text-tertiary)">alerts</div></div>
+        </div>
+        <div class="grid2">
+          <div class="card">
+            <div class="card-title">Network Traffic (pkt/s)</div>
+            <div class="traffic-chart"><canvas id="trafficCanvas"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Protocol Distribution</div>
+            <div style="display:flex;gap:12px;align-items:center">
+              <div class="mini-donut">
+                <svg viewBox="0 0 70 70"><circle cx="35" cy="35" r="25" fill="none" stroke="var(--border)" stroke-width="8"/><circle id="donut-tcp" cx="35" cy="35" r="25" fill="none" stroke="#185FA5" stroke-width="8" stroke-dasharray="157 157" stroke-dashoffset="-60" stroke-linecap="round" transform="rotate(-90 35 35)"/></svg>
+                <div class="donut-label"><div class="donut-num" id="donut-pct">60%</div><div class="donut-sub">TCP</div></div>
+              </div>
+              <div style="flex:1">
+                <div id="proto-bars"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="card">
+            <div class="card-title flex-between"><span>Live Alert Feed</span><span class="badge badge-red" id="alert-count-badge">0 alerts</span></div>
+            <div class="alert-feed" id="alert-feed">
+              <div style="color:var(--color-text-tertiary);font-size:12px;text-align:center;padding:20px">No alerts yet. Run a simulation or trigger an attack above.</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Source IP Heatmap (Top Attackers)</div>
+            <div id="geo-map" class="geo-map"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ALERTS -->
+      <div class="panel" id="panel-alerts">
+        <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center">
+          <input class="search-bar" style="flex:1;margin-bottom:0" placeholder="Search alerts by IP, rule, or type..." id="alert-search" oninput="filterAlerts()">
+          <button class="btn-sm" onclick="clearAlerts()">Clear All</button>
+        </div>
+        <div class="protocol-pills" id="severity-filter">
+          <span class="pill active" onclick="setSevFilter('all',this)">All</span>
+          <span class="pill" onclick="setSevFilter('critical',this)">Critical</span>
+          <span class="pill" onclick="setSevFilter('high',this)">High</span>
+          <span class="pill" onclick="setSevFilter('medium',this)">Medium</span>
+          <span class="pill" onclick="setSevFilter('low',this)">Low</span>
+        </div>
+        <div class="card">
+          <table class="rule-table" id="alert-table">
+            <thead><tr><th>Time</th><th>Severity</th><th>Rule</th><th>Src IP</th><th>Dst</th><th>Protocol</th><th>Action</th></tr></thead>
+            <tbody id="alert-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RULES -->
+      <div class="panel" id="panel-rules">
+        <div class="card" style="margin-bottom:10px">
+          <div class="card-title">Snort/Suricata Rule Engine</div>
+          <table class="rule-table" id="rules-table">
+            <thead><tr><th>Enabled</th><th>SID</th><th>Category</th><th>Rule Signature</th><th>Priority</th><th>Hits</th></tr></thead>
+            <tbody id="rules-tbody"></tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="card-title">Custom Rule Editor</div>
+          <textarea id="rule-editor" style="width:100%;height:70px;font-family:var(--font-mono);font-size:11px;background:var(--sec);border:0.5px solid var(--border);border-radius:6px;padding:8px;color:var(--color-text-primary);resize:vertical;outline:none" placeholder="alert tcp any any -> $HOME_NET 80 (msg:&quot;Custom HTTP Rule&quot;; content:&quot;/etc/passwd&quot;; sid:9999001; rev:1;)"></textarea>
+          <div style="display:flex;gap:6px;margin-top:6px">
+            <button class="btn-sm" onclick="addCustomRule()">Add Rule</button>
+            <button class="btn-sm" onclick="validateRule()">Validate Syntax</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PACKETS -->
+      <div class="panel" id="panel-packets">
+        <div class="protocol-pills" id="proto-filter">
+          <span class="pill active" onclick="setProtoFilter('all',this)">All</span>
+          <span class="pill" onclick="setProtoFilter('TCP',this)">TCP</span>
+          <span class="pill" onclick="setProtoFilter('UDP',this)">UDP</span>
+          <span class="pill" onclick="setProtoFilter('ICMP',this)">ICMP</span>
+          <span class="pill" onclick="setProtoFilter('HTTP',this)">HTTP</span>
+          <span class="pill" onclick="setProtoFilter('DNS',this)">DNS</span>
+        </div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <span class="card-title" style="margin-bottom:0">Packet Capture (live)</span>
+            <span style="font-size:10px;color:var(--color-text-tertiary)" id="pkt-count-label">0 packets</span>
+          </div>
+          <div style="overflow-x:auto">
+          <table class="packets-table">
+            <thead><tr><th>#</th><th>Time</th><th>Src IP</th><th>Dst IP</th><th>Proto</th><th>Len</th><th>Flags</th><th>Info</th></tr></thead>
+            <tbody id="pkt-tbody" style="max-height:400px"></tbody>
+          </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- RESPONSE -->
+      <div class="panel" id="panel-response">
+        <div class="grid2">
+          <div class="card">
+            <div class="card-title">Automated Response Actions</div>
+            <div class="response-grid">
+              <div class="response-card active-resp" id="resp-block" onclick="toggleResponse('block')">
+                <div class="response-title">🚫 IP Blocking</div>
+                <div class="response-desc">Auto-block source IPs triggering critical alerts via iptables</div>
+                <div class="response-status"><div class="status-dot" style="background:var(--green)"></div><span style="color:var(--green);font-size:10px">ENABLED</span></div>
+              </div>
+              <div class="response-card" id="resp-rate" onclick="toggleResponse('rate')">
+                <div class="response-title">⏱ Rate Limiting</div>
+                <div class="response-desc">Throttle connections exceeding 100 req/s to 10 req/s</div>
+                <div class="response-status"><div class="status-dot" style="background:var(--color-border-secondary)"></div><span style="color:var(--color-text-tertiary);font-size:10px">DISABLED</span></div>
+              </div>
+              <div class="response-card active-resp" id="resp-alert" onclick="toggleResponse('alert')">
+                <div class="response-title">📧 Email Alerts</div>
+                <div class="response-desc">Send SMTP alert for severity ≥ HIGH to soc@company.com</div>
+                <div class="response-status"><div class="status-dot" style="background:var(--green)"></div><span style="color:var(--green);font-size:10px">ENABLED</span></div>
+              </div>
+              <div class="response-card" id="resp-syslog" onclick="toggleResponse('syslog')">
+                <div class="response-title">📋 SIEM Forwarding</div>
+                <div class="response-desc">Forward events to Splunk/ELK via Syslog UDP 514</div>
+                <div class="response-status"><div class="status-dot" style="background:var(--color-border-secondary)"></div><span style="color:var(--color-text-tertiary);font-size:10px">DISABLED</span></div>
+              </div>
+              <div class="response-card" id="resp-quarantine" onclick="toggleResponse('quarantine')">
+                <div class="response-title">🔒 Host Quarantine</div>
+                <div class="response-desc">VLAN isolation of compromised hosts via SDN controller</div>
+                <div class="response-status"><div class="status-dot" style="background:var(--color-border-secondary)"></div><span style="color:var(--color-text-tertiary);font-size:10px">DISABLED</span></div>
+              </div>
+              <div class="response-card" id="resp-reset" onclick="toggleResponse('reset')">
+                <div class="response-title">♻ TCP Reset</div>
+                <div class="response-desc">Send TCP RST to terminate suspicious connections inline</div>
+                <div class="response-status"><div class="status-dot" style="background:var(--color-border-secondary)"></div><span style="color:var(--color-text-tertiary);font-size:10px">DISABLED</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Incident Timeline</div>
+            <div class="timeline" id="timeline">
+              <div style="color:var(--color-text-tertiary);font-size:12px">No incidents recorded yet.</div>
+            </div>
+            <div style="margin-top:12px;border-top:0.5px solid var(--border);padding-top:10px">
+              <div class="card-title">Blocked IPs</div>
+              <div id="blocked-list" style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-secondary)">None blocked</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Attack MITRE ATT&amp;CK Heatmap</div>
+          <div id="mitre-heatmap"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</div>
+<div class="notify" id="notify">
+  <div class="notify-title" id="notify-title"></div>
+  <div class="notify-sub" id="notify-sub"></div>
+</div>
+
+<script>
+let simRunning=true, totalPkts=0, totalAlerts=0, blockedIPs=new Set();
+let critCnt=0,highCnt=0,medCnt=0,lowCnt=0,fpCnt=0;
+let alertLog=[],packetLog=[],timelineLog=[];
+let trafficHistory=Array(60).fill(0), sparkData=Array(20).fill(0);
+let activeAttacks={}, protoFilter='all', sevFilter='all';
+let ruleHits={}, canvas, ctx, animFrame;
+let responseStates={block:true,rate:false,alert:true,syslog:false,quarantine:false,reset:false};
+
+const RULES=[
+  {sid:'1000001',cat:'Scan',sig:'ET SCAN Nmap SYN Scan',pri:'HIGH',enabled:true},
+  {sid:'1000002',cat:'SQLi',sig:'ET WEB_SERVER SQL Injection Attempt',pri:'CRITICAL',enabled:true},
+  {sid:'1000003',cat:'DoS',sig:'ET DOS SYN Flood Detected',pri:'CRITICAL',enabled:true},
+  {sid:'1000004',cat:'Brute',sig:'ET BRUTE SSH Login Attempt',pri:'HIGH',enabled:true},
+  {sid:'1000005',cat:'XSS',sig:'ET WEB_SERVER XSS Script Tag',pri:'MEDIUM',enabled:true},
+  {sid:'1000006',cat:'C2',sig:'ET MALWARE C2 Beacon Detected',pri:'CRITICAL',enabled:true},
+  {sid:'1000007',cat:'Recon',sig:'ET RECON OS Fingerprinting',pri:'LOW',enabled:true},
+  {sid:'1000008',cat:'RCE',sig:'ET WEB_SERVER Remote Code Exec',pri:'CRITICAL',enabled:false},
+  {sid:'1000009',cat:'MITM',sig:'ET ARP Spoofing Detected',pri:'HIGH',enabled:true},
+  {sid:'1000010',cat:'Exfil',sig:'ET DNS Exfiltration Attempt',pri:'HIGH',enabled:true},
+  {sid:'1000011',cat:'LFI',sig:'ET WEB_SERVER LFI /etc/passwd',pri:'HIGH',enabled:true},
+  {sid:'1000012',cat:'Trojan',sig:'ET TROJAN Reverse Shell Beacon',pri:'CRITICAL',enabled:false},
+];
+
+const ATTACK_TEMPLATES={
+  portscan:{label:'Port Scan',sev:'high',proto:'TCP',msgs:['Nmap SYN Scan Detected','Port Sweep from External IP','Stealth XMAS Scan','TCP FIN Scan Activity'],icon:'🔍',sid:'1000001'},
+  sqli:{label:'SQL Injection',sev:'critical',proto:'HTTP',msgs:['SQL Injection UNION SELECT','Blind SQLi Time-based','Error-based SQLi Detected','SQLi via User-Agent Header'],icon:'💉',sid:'1000002'},
+  dos:{label:'DoS Attack',sev:'critical',proto:'TCP',msgs:['SYN Flood Detected','UDP Amplification Attack','HTTP Slowloris Attack','ICMP Flood'],icon:'🌊',sid:'1000003'},
+  brute:{label:'Brute Force',sev:'high',proto:'TCP',msgs:['SSH Brute Force Login','HTTP Basic Auth Brute','RDP Login Attempts','FTP Credential Stuffing'],icon:'🔑',sid:'1000004'},
+  xss:{label:'XSS Attack',sev:'medium',proto:'HTTP',msgs:['Reflected XSS in Parameter','Stored XSS Script Tag','DOM-based XSS Attempt','XSS via Cookie Header'],icon:'📜',sid:'1000005'},
+};
+
+const GEO_SOURCES=[
+  {flag:'🇷🇺',name:'Russia',ip:'185.220.x.x',base:0},
+  {flag:'🇨🇳',name:'China',ip:'103.x.x.x',base:0},
+  {flag:'🇺🇸',name:'United States',ip:'104.x.x.x',base:0},
+  {flag:'🇩🇪',name:'Germany',ip:'91.x.x.x',base:0},
+  {flag:'🇧🇷',name:'Brazil',ip:'177.x.x.x',base:0},
+  {flag:'🇳🇱',name:'Netherlands',ip:'45.x.x.x',base:0},
+];
+
+const MITRE=[
+  {tactic:'Recon',techniques:['T1595','T1592','T1589']},
+  {tactic:'Initial Access',techniques:['T1190','T1133','T1566']},
+  {tactic:'Execution',techniques:['T1059','T1203','T1204']},
+  {tactic:'Defense Evasion',techniques:['T1027','T1070','T1562']},
+  {tactic:'C2',techniques:['T1071','T1095','T1090']},
+];
+
+const PROTOCOLS=['TCP','UDP','HTTP','HTTPS','DNS','ICMP'];
+const PROTO_COLORS={'TCP':'#185FA5','UDP':'#3B6D11','HTTP':'#BA7517','HTTPS':'#534AB7','DNS':'#0F6E56','ICMP':'#A32D2D'};
+const SEV_COLORS={critical:['crit','🔴'],high:['high','🟠'],medium:['med','🔵'],low:['low','🟢']};
+
+function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function rndIP(){return `${rnd(1,254)}.${rnd(0,254)}.${rnd(0,254)}.${rnd(1,254)}`;}
+function rndEl(arr){return arr[Math.floor(Math.random()*arr.length)];}
+function now(){return new Date().toISOString().substr(11,8);}
+
+function switchTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
+  if(name==='packets')renderPackets();
+  if(name==='alerts')renderAlertTable();
+  if(name==='rules')renderRules();
+  if(name==='response')renderTimeline();
+}
+
+function showNotify(title,sub,color){
+  const n=document.getElementById('notify');
+  document.getElementById('notify-title').textContent=title;
+  document.getElementById('notify-sub').textContent=sub;
+  n.style.borderLeftColor=color||'var(--border)';
+  n.classList.add('show');
+  setTimeout(()=>n.classList.remove('show'),3000);
+}
+
+function toggleSim(){
+  simRunning=!simRunning;
+  document.getElementById('sim-toggle').textContent=simRunning?'Pause':'Resume';
+  document.getElementById('sim-led').className='sim-led'+(simRunning?'':' paused');
+  document.getElementById('sim-status').textContent=simRunning?'Simulation running':'Simulation paused';
+}
+
+function triggerAttack(type){
+  const btn=document.getElementById('atk-'+type);
+  if(activeAttacks[type]){clearTimeout(activeAttacks[type]);delete activeAttacks[type];btn.classList.remove('active-atk');return;}
+  btn.classList.add('active-atk');
+  const atk=ATTACK_TEMPLATES[type];
+  const srcIP=rndIP();
+  function fire(){
+    if(!activeAttacks[type])return;
+    generateAlert(atk.sev,rndEl(atk.msgs),srcIP,'192.168.1.'+rnd(1,20),atk.proto,atk.sid);
+    if(ruleHits[atk.sid]!==undefined)ruleHits[atk.sid]++;
+    activeAttacks[type]=setTimeout(fire,rnd(400,1200));
+  }
+  activeAttacks[type]=setTimeout(fire,100);
+  showNotify('Attack Simulation: '+atk.label,'Source: '+srcIP,'var(--red)');
+  if(type!=='portscan')setTimeout(()=>{
+    if(activeAttacks[type]){clearTimeout(activeAttacks[type]);delete activeAttacks[type];btn.classList.remove('active-atk');}
+  },8000);
+}
+
+function generateAlert(sev,msg,srcIP,dstIP,proto,sid){
+  totalAlerts++;
+  const sc=SEV_COLORS[sev]||['low','🟢'];
+  const entry={time:now(),sev,msg,srcIP:srcIP||rndIP(),dstIP:dstIP||'192.168.1.'+rnd(1,50),proto:proto||rndEl(PROTOCOLS),sid:sid||'1000'+rnd(1,12).toString().padStart(3,'0')};
+  alertLog.unshift(entry);
+  if(alertLog.length>200)alertLog.pop();
+  if(sev==='critical'){critCnt++;addTimeline('🔴 Critical: '+msg,entry.srcIP);}
+  else if(sev==='high')highCnt++;
+  else if(sev==='medium')medCnt++;
+  else lowCnt++;
+  if(responseStates.block&&sev==='critical'){blockedIPs.add(entry.srcIP);updateBlockedList();}
+  updateMetrics();
+  renderFeedItem(entry,sc);
+  updateGeo(entry.srcIP);
+  const badge=document.getElementById('alert-badge');
+  badge.style.display='inline';badge.textContent=totalAlerts;
+  document.getElementById('alert-count-badge').textContent=totalAlerts+' alerts';
+}
+
+function renderFeedItem(entry,sc){
+  const feed=document.getElementById('alert-feed');
+  const placeholder=feed.querySelector('div[style*="No alerts"]');
+  if(placeholder)placeholder.remove();
+  const div=document.createElement('div');
+  div.className='alert-item '+sc[0];
+  div.innerHTML=`<div class="alert-icon ${sc[0]}">${sc[1]}</div><div class="alert-body"><div class="alert-title">${entry.msg}</div><div class="alert-meta"><span>${entry.srcIP} → ${entry.dstIP}</span><span>${entry.proto}</span><span>SID:${entry.sid}</span></div></div><div class="alert-time">${entry.time}</div>`;
+  feed.insertBefore(div,feed.firstChild);
+  if(feed.children.length>30)feed.removeChild(feed.lastChild);
+}
+
+function updateMetrics(){
+  document.getElementById('m-crit').textContent=critCnt;
+  document.getElementById('m-high').textContent=highCnt;
+  document.getElementById('m-med').textContent=medCnt;
+  document.getElementById('m-low').textContent=lowCnt;
+  document.getElementById('s-alerts').textContent=totalAlerts;
+  document.getElementById('s-blocked').textContent=blockedIPs.size;
+  document.getElementById('s-pkts').textContent=totalPkts.toLocaleString();
+  document.getElementById('s-fp').textContent=fpCnt;
+}
+
+let geoHits={};
+function updateGeo(ip){
+  const geo=GEO_SOURCES[rnd(0,GEO_SOURCES.length-1)];
+  geoHits[geo.name]=(geoHits[geo.name]||0)+1;
+  renderGeo();
+}
+
+function renderGeo(){
+  const map=document.getElementById('geo-map');
+  const max=Math.max(...Object.values(geoHits),1);
+  map.innerHTML=GEO_SOURCES.map(g=>{
+    const c=geoHits[g.name]||0;
+    const pct=Math.round(c/max*100);
+    return `<div class="geo-item"><div class="geo-flag">${g.flag}</div><div class="geo-name">${g.name}</div><div class="geo-count">${c} alerts</div><div class="geo-bar-wrap"><div class="geo-bar" style="width:${pct}%"></div></div></div>`;
+  }).join('');
+}
+
+function renderAlertTable(){
+  const q=(document.getElementById('alert-search').value||'').toLowerCase();
+  const tbody=document.getElementById('alert-tbody');
+  const rows=alertLog.filter(a=>{
+    if(sevFilter!=='all'&&a.sev!==sevFilter)return false;
+    if(q&&!JSON.stringify(a).toLowerCase().includes(q))return false;
+    return true;
+  });
+  if(!rows.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--color-text-tertiary);padding:20px">No matching alerts</td></tr>';return;}
+  const SEV_BADGE={critical:'badge-red',high:'badge-amber',medium:'badge-blue',low:'badge-green'};
+  tbody.innerHTML=rows.slice(0,60).map(a=>`<tr>
+    <td style="font-family:var(--font-mono);font-size:10px">${a.time}</td>
+    <td><span class="badge ${SEV_BADGE[a.sev]||'badge-green'}">${a.sev.toUpperCase()}</span></td>
+    <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.msg}</td>
+    <td style="font-family:var(--font-mono)">${a.srcIP}</td>
+    <td style="font-family:var(--font-mono)">${a.dstIP}</td>
+    <td><span class="proto-tag" style="background:${PROTO_COLORS[a.proto]||'#888'}22;color:${PROTO_COLORS[a.proto]||'#888'}">${a.proto}</span></td>
+    <td><button class="btn-sm danger" onclick="blockIP('${a.srcIP}')">Block</button></td>
+  </tr>`).join('');
+}
+
+function filterAlerts(){renderAlertTable();}
+function setSevFilter(v,el){sevFilter=v;document.querySelectorAll('#severity-filter .pill').forEach(p=>p.classList.remove('active'));el.classList.add('active');renderAlertTable();}
+function clearAlerts(){alertLog=[];critCnt=0;highCnt=0;medCnt=0;lowCnt=0;totalAlerts=0;document.getElementById('alert-tbody').innerHTML='';document.getElementById('alert-feed').innerHTML='<div style="color:var(--color-text-tertiary);font-size:12px;text-align:center;padding:20px">No alerts yet.</div>';updateMetrics();document.getElementById('alert-badge').style.display='none';}
+
+function blockIP(ip){blockedIPs.add(ip);document.getElementById('s-blocked').textContent=blockedIPs.size;updateBlockedList();showNotify('IP Blocked',''+ip+' added to blocklist','var(--red)');}
+function updateBlockedList(){const el=document.getElementById('blocked-list');if(!blockedIPs.size){el.textContent='None blocked';return;}el.innerHTML=[...blockedIPs].slice(-8).reverse().map(ip=>`<span style="display:inline-block;background:rgba(226,75,74,.1);color:var(--red);padding:2px 6px;border-radius:3px;margin:2px">${ip}</span>`).join('');}
+
+let ruleData=RULES.map((r,i)=>({...r,hits:0}));
+function renderRules(){
+  const PRI_BADGE={CRITICAL:'badge-red',HIGH:'badge-amber',MEDIUM:'badge-blue',LOW:'badge-green'};
+  document.getElementById('rules-tbody').innerHTML=ruleData.map((r,i)=>`<tr>
+    <td><label class="toggle-switch"><input type="checkbox" ${r.enabled?'checked':''} onchange="toggleRule(${i},this.checked)"><span class="slider-track"></span></label></td>
+    <td style="font-family:var(--font-mono)">${r.sid}</td>
+    <td><span class="badge badge-blue">${r.cat}</span></td>
+    <td><span class="rule-code">${r.sig}</span></td>
+    <td><span class="badge ${PRI_BADGE[r.pri]||'badge-green'}">${r.pri}</span></td>
+    <td style="font-weight:600">${r.hits}</td>
+  </tr>`).join('');
+  document.getElementById('s-rules').textContent=ruleData.filter(r=>r.enabled).length;
+}
+
+function toggleRule(i,v){ruleData[i].enabled=v;document.getElementById('s-rules').textContent=ruleData.filter(r=>r.enabled).length;}
+
+function addCustomRule(){
+  const ed=document.getElementById('rule-editor');
+  const text=ed.value.trim();
+  if(!text){showNotify('Error','Rule editor is empty','var(--red)');return;}
+  const sidMatch=text.match(/sid:(\d+)/);
+  const msgMatch=text.match(/msg:"([^"]+)"/);
+  ruleData.push({sid:sidMatch?sidMatch[1]:'9999'+rnd(0,999),cat:'Custom',sig:msgMatch?msgMatch[1]:text.slice(0,50),pri:'MEDIUM',enabled:true,hits:0});
+  renderRules();ed.value='';
+  showNotify('Rule Added','Custom rule loaded into engine','var(--green)');
+}
+
+function validateRule(){
+  const text=document.getElementById('rule-editor').value.trim();
+  if(!text){showNotify('Error','Nothing to validate','var(--red)');return;}
+  const ok=text.includes('alert')&&text.includes('msg:')&&text.includes('sid:');
+  showNotify(ok?'Syntax OK':'Syntax Error',ok?'Rule structure looks valid':'Missing alert action, msg, or sid field',ok?'var(--green)':'var(--red)');
+}
+
+let pktId=0;
+function addPacket(srcIP,dstIP,proto,len,flags,info,flagged){
+  pktId++;
+  const entry={id:pktId,time:now(),srcIP,dstIP,proto,len,flags,info,flagged};
+  packetLog.unshift(entry);
+  if(packetLog.length>500)packetLog.pop();
+  document.getElementById('pkt-count-label').textContent=pktId+' packets';
+}
+
+function renderPackets(){
+  const filter=protoFilter;
+  const rows=packetLog.filter(p=>filter==='all'||p.proto===filter).slice(0,80);
+  document.getElementById('pkt-tbody').innerHTML=rows.map(p=>`<tr class="${p.flagged?'flagged':''}">
+    <td style="color:var(--color-text-tertiary)">${p.id}</td>
+    <td>${p.time}</td>
+    <td>${p.srcIP}</td>
+    <td>${p.dstIP}</td>
+    <td><span class="proto-tag" style="background:${PROTO_COLORS[p.proto]||'#88888822'};color:white;font-size:9px">${p.proto}</span></td>
+    <td>${p.len}</td>
+    <td style="color:var(--color-text-tertiary)">${p.flags}</td>
+    <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;color:${p.flagged?'var(--red)':'var(--color-text-secondary)'}">${p.info}</td>
+  </tr>`).join('');
+}
+
+function setProtoFilter(v,el){protoFilter=v;document.querySelectorAll('#proto-filter .pill').forEach(p=>p.classList.remove('active'));el.classList.add('active');renderPackets();}
+
+function addTimeline(msg,ip){
+  timelineLog.unshift({msg,ip,time:now()});
+  if(timelineLog.length>20)timelineLog.pop();
+  renderTimeline();
+}
+
+function renderTimeline(){
+  const el=document.getElementById('timeline');
+  if(!timelineLog.length){el.innerHTML='<div style="color:var(--color-text-tertiary);font-size:12px">No incidents recorded yet.</div>';return;}
+  el.innerHTML=timelineLog.slice(0,8).map(t=>`<div class="tl-item"><div class="tl-dot" style="background:var(--red)"></div><div class="tl-text">${t.msg}</div><div class="tl-time">${t.time} · ${t.ip}</div></div>`).join('');
+}
+
+function toggleResponse(key){
+  responseStates[key]=!responseStates[key];
+  const card=document.getElementById('resp-'+key);
+  const on=responseStates[key];
+  card.classList.toggle('active-resp',on);
+  const statusEl=card.querySelector('.response-status');
+  statusEl.innerHTML=`<div class="status-dot" style="background:${on?'var(--green)':'var(--color-border-secondary)'}"></div><span style="color:${on?'var(--green)':'var(--color-text-tertiary)'};font-size:10px">${on?'ENABLED':'DISABLED'}</span>`;
+  showNotify(key.toUpperCase()+' '+(on?'Enabled':'Disabled'),'Response policy updated',on?'var(--green)':'var(--amber)');
+}
+
+function renderMitre(){
+  const el=document.getElementById('mitre-heatmap');
+  el.innerHTML=MITRE.map(m=>`<div style="margin-bottom:6px"><div class="heatrow"><div class="heatrow-label">${m.tactic}</div><div class="heatcells">${m.techniques.map(t=>{const v=rnd(0,3);const colors=['var(--sec)','rgba(186,117,23,.2)','rgba(226,75,74,.35)','rgba(226,75,74,.7)'];const tc=v===0?'var(--color-text-tertiary)':v===1?'var(--amber)':v===2?'var(--red)':v===3?'var(--red)':'inherit';return `<div class="hcell" style="background:${colors[v]};border:0.5px solid var(--border)" title="${t}: ${['No activity','Low','Medium','High'][v]}"></div>`}).join('')}</div><div style="font-size:9px;color:var(--color-text-tertiary);margin-left:6px">${m.techniques.join(' · ')}</div></div></div>`).join('');
+}
+
+function renderProtoBar(){
+  const protos=['TCP','UDP','HTTP','DNS','ICMP'];
+  const vals=[60,20,12,5,3];
+  const container=document.getElementById('proto-bars');
+  container.innerHTML=protos.map((p,i)=>`<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><div style="width:36px;font-size:10px;color:var(--color-text-tertiary)">${p}</div><div style="flex:1;height:8px;background:var(--sec);border-radius:4px;overflow:hidden"><div style="width:${vals[i]}%;height:100%;background:${PROTO_COLORS[p]};border-radius:4px;transition:.8s"></div></div><div style="font-size:10px;color:var(--color-text-secondary);width:28px;text-align:right">${vals[i]}%</div></div>`).join('');
+}
+
+function updateSidebarThreats(){
+  const counts={};
+  alertLog.slice(0,50).forEach(a=>{
+    const cat=a.msg.split(' ')[0]+'...';
+    counts[cat]=(counts[cat]||0)+1;
+  });
+  const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,4);
+  const el=document.getElementById('sidebar-threats');
+  if(!sorted.length){el.innerHTML='<div style="font-size:11px;color:var(--color-text-tertiary);padding:4px">No threats detected</div>';return;}
+  el.innerHTML=sorted.map(([k,v])=>`<div class="stat-row"><span class="stat-name" style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px">${k}</span><span style="color:var(--red);font-size:11px;font-weight:600">${v}</span></div>`).join('');
+}
+
+// Traffic canvas
+function setupCanvas(){
+  canvas=document.getElementById('trafficCanvas');
+  if(!canvas)return;
+  ctx=canvas.getContext('2d');
+  canvas.width=canvas.parentElement.clientWidth||400;
+  canvas.height=90;
+}
+
+function drawTraffic(){
+  if(!canvas||!ctx)return;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const w=canvas.width,h=canvas.height;
+  const data=trafficHistory;
+  const max=Math.max(...data,1);
+  const step=w/data.length;
+  const isDark=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;
+  ctx.beginPath();
+  ctx.moveTo(0,h);
+  data.forEach((v,i)=>{
+    const x=i*step,y=h-(v/max)*(h-8);
+    if(i===0)ctx.lineTo(x,y);else ctx.lineTo(x,y);
+  });
+  ctx.lineTo(w,h);ctx.closePath();
+  const grad=ctx.createLinearGradient(0,0,0,h);
+  grad.addColorStop(0,isDark?'rgba(55,138,221,.5)':'rgba(24,95,165,.25)');
+  grad.addColorStop(1,'rgba(24,95,165,0)');
+  ctx.fillStyle=grad;ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(0,h-(data[0]/max)*(h-8));
+  data.forEach((v,i)=>{ctx.lineTo(i*step,h-(v/max)*(h-8));});
+  ctx.strokeStyle=isDark?'#378ADD':'#185FA5';ctx.lineWidth=1.5;ctx.stroke();
+}
+
+function updateSparkline(){
+  const bars=document.getElementById('sparkline');
+  const max=Math.max(...sparkData,1);
+  bars.innerHTML=sparkData.map(v=>`<div class="spark-bar" style="height:${Math.max(2,Math.round(v/max*18))}px"></div>`).join('');
+}
+
+function updateClock(){
+  document.getElementById('top-clock').textContent=new Date().toISOString().substr(11,8)+' UTC';
+}
+
+// Main simulation tick
+let tickCount=0;
+function tick(){
+  if(!simRunning){requestAnimationFrame(()=>setTimeout(tick,500));return;}
+  tickCount++;
+  const baseRate=rnd(40,120);
+  const attackBonus=Object.keys(activeAttacks).length*rnd(30,80);
+  const pktThisTick=baseRate+attackBonus;
+  totalPkts+=pktThisTick;
+  trafficHistory.shift();trafficHistory.push(pktThisTick);
+  sparkData.shift();sparkData.push(pktThisTick);
+  document.getElementById('pkt-rate').textContent=pktThisTick+' pkt/s';
+  // Generate some background packets
+  for(let i=0;i<rnd(1,3);i++){
+    const proto=rndEl(PROTOCOLS);
+    const src=rndIP();
+    const dst='192.168.'+rnd(1,5)+'.'+rnd(1,50);
+    const len=rnd(40,1500);
+    const flags=rndEl(['SYN','ACK','SYN-ACK','FIN','RST','PSH-ACK']);
+    const flagged=Math.random()<0.03;
+    addPacket(src,dst,proto,len,flags,flagged?'⚠ Suspicious payload':'Normal traffic',flagged);
+    if(flagged){generateAlert(rndEl(['low','medium']),'Anomalous packet detected',src,dst,proto,rndEl(ruleData.filter(r=>r.enabled).map(r=>r.sid)));}
+  }
+  // Random background alerts
+  if(Math.random()<0.05){
+    const sev=rndEl(['low','low','medium','low']);
+    generateAlert(sev,rndEl(['Unusual DNS query volume','ICMP flood spike','Port scan signature','HTTP anomaly']),rndIP(),null,null,null);
+  }
+  // Update ruleHits periodically
+  if(tickCount%5===0){
+    ruleData.forEach((r,i)=>{if(r.enabled&&Math.random()<0.1)r.hits++;});
+  }
+  drawTraffic();
+  updateSparkline();
+  updateClock();
+  updateSidebarThreats();
+  document.getElementById('s-pkts').textContent=totalPkts.toLocaleString();
+  if(document.getElementById('panel-packets').classList.contains('active')&&tickCount%3===0)renderPackets();
+  if(document.getElementById('panel-alerts').classList.contains('active')&&tickCount%4===0)renderAlertTable();
+  if(document.getElementById('panel-rules').classList.contains('active')&&tickCount%10===0)renderRules();
+  requestAnimationFrame(()=>setTimeout(tick,800));
+}
+
+// Init
+setTimeout(()=>{
+  setupCanvas();
+  renderRules();
+  renderGeo();
+  renderProtoBar();
+  renderMitre();
+  renderTimeline();
+  // Seed initial geo
+  GEO_SOURCES.forEach(g=>{geoHits[g.name]=rnd(0,3);});
+  renderGeo();
+  tick();
+},50);
+</script>
+</body>
+</html>
